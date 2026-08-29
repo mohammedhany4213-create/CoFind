@@ -1,0 +1,6 @@
+@coFind.Api_HostAddress = http://localhost:5187
+
+GET {{coFind.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
