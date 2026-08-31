@@ -65,6 +65,9 @@ public class OfferService
 
     private static OfferListItemResponse MapToListItem(Offer offer)
     {
+        var ownerId = offer.Owner?.UserId ?? offer.UserId;
+        var ownerName = offer.Owner?.Name ?? string.Empty;
+
         return new OfferListItemResponse(
             offer.OfferId,
             offer.Title,
@@ -75,6 +78,6 @@ public class OfferService
             offer.IsAvilable,
             offer.Location,
             offer.CreatedAt,
-            new OfferOwnerResponse(offer.Owner.UserId, offer.Owner.Name));
+            new OfferOwnerResponse(ownerId, ownerName));
     }
 }
