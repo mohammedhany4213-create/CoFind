@@ -11,29 +11,19 @@ namespace coFind.Api.Controllers;
 public class OffersController : ControllerBase
 {
     private readonly OfferService _offerService;
-
-    public OffersController(OfferService offerService)
-    {
-        _offerService = offerService;
-    }
+    public OffersController(OfferService offerService) => _offerService = offerService;
 
     [AllowAnonymous]
     [HttpGet]
     public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
-    {
-        var offers = await _offerService.GetAllActiveOffersAsync(cancellationToken);
-        return Ok(offers);
-    }
+        => Ok(await _offerService.GetAllActiveOffersAsync(cancellationToken));
 
     [AllowAnonymous]
     [HttpGet("{id:int}")]
     public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
     {
         var offer = await _offerService.GetByIdAsync(id, cancellationToken);
-        if (offer is null)
-            return NotFound(new { message = "Offer not found." });
-
-        return Ok(offer);
+        return offer is null ? NotFound(new { message = "Offer not found." }) : Ok(offer);
     }
 
     [Authorize]
@@ -41,11 +31,8 @@ public class OffersController : ControllerBase
     public async Task<IActionResult> GetMyOffers(CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId))
-            return Unauthorized(new { message = "Invalid user identity." });
-
-        var offers = await _offerService.GetMyOffersAsync(userId, cancellationToken);
-        return Ok(offers);
+        if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized(new { message = "Invalid user identity." });
+        return Ok(await _offerService.GetMyOffersAsync(userId, cancellationToken));
     }
 
     [Authorize]
@@ -53,22 +40,14 @@ public class OffersController : ControllerBase
     public async Task<ActionResult<CreateOfferResponse>> Create([FromBody] CreateOfferRequest request, CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId))
-            return Unauthorized(new { message = "Invalid user identity." });
-
+        if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized(new { message = "Invalid user identity." });
         try
         {
             var response = await _offerService.CreateOfferAsync(userId, request, cancellationToken);
             return CreatedAtAction(nameof(GetById), new { id = response.OfferId }, response);
         }
-        catch (InvalidOperationException ex)
-        {
-            return NotFound(new { message = ex.Message });
-        }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        catch (InvalidOperationException ex) { return NotFound(new { message = ex.Message }); }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
     }
 
     [Authorize]
@@ -76,25 +55,28 @@ public class OffersController : ControllerBase
     public async Task<IActionResult> Update(int id, [FromBody] UpdateOfferRequest request, CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId))
-            return Unauthorized(new { message = "Invalid user identity." });
-
+        if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized(new { message = "Invalid user identity." });
         try
         {
             var offer = await _offerService.UpdateOfferAsync(userId, id, request, cancellationToken);
-            if (offer is null)
-                return NotFound(new { message = "Offer not found." });
+            return offer is null ? NotFound(new { message = "Offer not found." }) : Ok(offer);
+        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
+        catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+    }
 
-            return Ok(offer);
-        }
-        catch (UnauthorizedAccessException)
+    [Authorize]
+    [HttpPatch("{id:int}/status")]
+    public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOfferStatusRequest request, CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized(new { message = "Invalid user identity." });
+        try
         {
-            return Forbid();
+            var offer = await _offerService.UpdateOfferStatusAsync(userId, id, request.IsActive, cancellationToken);
+            return offer is null ? NotFound(new { message = "Offer not found." }) : Ok(offer);
         }
-        catch (ArgumentException ex)
-        {
-            return BadRequest(new { message = ex.Message });
-        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 
     [Authorize]
@@ -102,20 +84,12 @@ public class OffersController : ControllerBase
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId))
-            return Unauthorized(new { message = "Invalid user identity." });
-
+        if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized(new { message = "Invalid user identity." });
         try
         {
             var deleted = await _offerService.DeleteOfferAsync(userId, id, cancellationToken);
-            if (!deleted)
-                return NotFound(new { message = "Offer not found." });
-
-            return NoContent();
+            return deleted ? NoContent() : NotFound(new { message = "Offer not found." });
         }
-        catch (UnauthorizedAccessException)
-        {
-            return Forbid();
-        }
+        catch (UnauthorizedAccessException) { return Forbid(); }
     }
 }
