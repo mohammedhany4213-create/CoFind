@@ -34,7 +34,7 @@ public class OfferRepository : IOfferRepository
     {
         return await _context.Offers
             .Include(o => o.Owner)
-            .Where(o => o.UserId == userId && o.IsActive)
+            .Where(o => o.UserId == userId)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
     }
