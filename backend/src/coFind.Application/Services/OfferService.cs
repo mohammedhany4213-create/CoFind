@@ -57,6 +57,12 @@ public class OfferService
         return MapToListItem(offer);
     }
 
+    public async Task<IEnumerable<OfferListItemResponse>> GetMyOffersAsync(int userId, CancellationToken cancellationToken = default)
+    {
+        var offers = await _offerRepository.GetByUserIdAsync(userId, cancellationToken);
+        return offers.Select(MapToListItem);
+    }
+
     private static OfferListItemResponse MapToListItem(Offer offer)
     {
         return new OfferListItemResponse(
