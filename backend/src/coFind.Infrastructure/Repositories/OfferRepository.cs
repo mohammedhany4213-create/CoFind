@@ -33,6 +33,7 @@ public class OfferRepository : IOfferRepository
     public async Task<IEnumerable<Offer>> GetByUserIdAsync(int userId, CancellationToken cancellationToken = default)
     {
         return await _context.Offers
+            .Include(o => o.Owner)
             .Where(o => o.UserId == userId)
             .AsNoTracking()
             .ToListAsync(cancellationToken);
