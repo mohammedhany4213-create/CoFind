@@ -68,9 +68,23 @@ public class OfferService
             offer.CreatedAt);
     }
 
-    public async Task<IEnumerable<Offer>> GetAllActiveOffersAsync(
+    public async Task<IEnumerable<OfferListItemResponse>> GetAllActiveOffersAsync(
         CancellationToken cancellationToken = default)
     {
-        return await _offerRepository.GetAllAsync(cancellationToken);
+        var offers = await _offerRepository.GetAllAsync(cancellationToken);
+
+        return offers.Select(offer => new OfferListItemResponse(
+            offer.OfferId,
+            offer.Title,
+            offer.Description,
+            offer.Role,
+            offer.Skills,
+            offer.Industry,
+            offer.IsAvilable,
+            offer.Location,
+            offer.CreatedAt,
+            new OfferOwnerResponse(
+                offer.Owner.UserId,
+                offer.Owner.Name)));
     }
 }
