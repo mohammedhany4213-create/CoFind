@@ -89,11 +89,10 @@ public class OfferService
     public async Task<bool> DeleteOfferAsync(int userId, int offerId, CancellationToken cancellationToken = default)
     {
         var offer = await _offerRepository.GetByIdAsync(offerId, cancellationToken);
-        if (offer is null || !offer.IsActive) return false;
+        if (offer is null) return false;
         if (offer.UserId != userId) throw new UnauthorizedAccessException("You are not allowed to delete this offer.");
 
-        offer.IsActive = false;
-        offer.UpdatedAt = DateTime.UtcNow;
+        await _offerRepository.DeleteAsync(offer, cancellationToken);
         await _offerRepository.SaveChangesAsync(cancellationToken);
         return true;
     }
