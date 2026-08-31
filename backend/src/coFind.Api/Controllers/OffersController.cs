@@ -25,6 +25,17 @@ public class OffersController : ControllerBase
         return Ok(offers);
     }
 
+    [AllowAnonymous]
+    [HttpGet("{id:int}")]
+    public async Task<IActionResult> GetById(int id, CancellationToken cancellationToken)
+    {
+        var offer = await _offerService.GetByIdAsync(id, cancellationToken);
+        if (offer is null)
+            return NotFound(new { message = "Offer not found." });
+
+        return Ok(offer);
+    }
+
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<CreateOfferResponse>> Create(
@@ -38,12 +49,8 @@ public class OffersController : ControllerBase
 
         try
         {
-            var response = await _offerService.CreateOfferAsync(
-                userId,
-                request,
-                cancellationToken);
-
-            return CreatedAtAction(nameof(Create), new { id = response.OfferId }, response);
+            var response = await _offerService.CreateOfferAsync(userId, request, cancellationToken);
+            return CreatedAtAction(nameof(GetById), new { id = response.OfferId }, response);
         }
         catch (InvalidOperationException ex)
         {
