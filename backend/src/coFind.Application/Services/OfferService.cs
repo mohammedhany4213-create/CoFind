@@ -23,14 +23,10 @@ public class OfferService
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
 
         if (user is null)
-        {
             throw new InvalidOperationException("User not found.");
-        }
 
         if (request.Skills is null || request.Skills.Count == 0)
-        {
             throw new ArgumentException("At least one skill is required.");
-        }
 
         var offer = new Offer
         {
@@ -53,9 +49,7 @@ public class OfferService
         };
 
         if (offer.Skills.Count == 0)
-        {
             throw new ArgumentException("At least one valid skill is required.");
-        }
 
         await _offerRepository.AddAsync(offer, cancellationToken);
         await _offerRepository.SaveChangesAsync(cancellationToken);
@@ -72,5 +66,11 @@ public class OfferService
             offer.Location,
             offer.IsActive,
             offer.CreatedAt);
+    }
+
+    public async Task<IEnumerable<Offer>> GetAllActiveOffersAsync(
+        CancellationToken cancellationToken = default)
+    {
+        return await _offerRepository.GetAllAsync(cancellationToken);
     }
 }
