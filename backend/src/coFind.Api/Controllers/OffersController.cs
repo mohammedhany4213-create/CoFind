@@ -41,7 +41,6 @@ public class OffersController : ControllerBase
     public async Task<IActionResult> GetMyOffers(CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         if (!int.TryParse(userIdClaim, out var userId))
             return Unauthorized(new { message = "Invalid user identity." });
 
@@ -51,12 +50,9 @@ public class OffersController : ControllerBase
 
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult<CreateOfferResponse>> Create(
-        [FromBody] CreateOfferRequest request,
-        CancellationToken cancellationToken)
+    public async Task<ActionResult<CreateOfferResponse>> Create([FromBody] CreateOfferRequest request, CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         if (!int.TryParse(userIdClaim, out var userId))
             return Unauthorized(new { message = "Invalid user identity." });
 
@@ -77,32 +73,49 @@ public class OffersController : ControllerBase
 
     [Authorize]
     [HttpPut("{id:int}")]
-    public async Task<IActionResult> Update(
-        int id,
-        [FromBody] UpdateOfferRequest request,
-        CancellationToken cancellationToken)
+    public async Task<IActionResult> Update(int id, [FromBody] UpdateOfferRequest request, CancellationToken cancellationToken)
     {
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-
         if (!int.TryParse(userIdClaim, out var userId))
             return Unauthorized(new { message = "Invalid user identity." });
 
         try
         {
             var offer = await _offerService.UpdateOfferAsync(userId, id, request, cancellationToken);
-
             if (offer is null)
                 return NotFound(new { message = "Offer not found." });
 
             return Ok(offer);
         }
-        catch (UnauthorizedAccessException ex)
+        catch (UnauthorizedAccessException)
         {
             return Forbid();
         }
         catch (ArgumentException ex)
         {
             return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [Authorize]
+    [HttpDelete("{id:int}")]
+    public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid user identity." });
+
+        try
+        {
+            var deleted = await _offerService.DeleteOfferAsync(userId, id, cancellationToken);
+            if (!deleted)
+                return NotFound(new { message = "Offer not found." });
+
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return Forbid();
         }
     }
 }
