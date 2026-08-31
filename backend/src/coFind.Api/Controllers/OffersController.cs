@@ -17,6 +17,14 @@ public class OffersController : ControllerBase
         _offerService = offerService;
     }
 
+    [AllowAnonymous]
+    [HttpGet]
+    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
+    {
+        var offers = await _offerService.GetAllActiveOffersAsync(cancellationToken);
+        return Ok(offers);
+    }
+
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<CreateOfferResponse>> Create(
@@ -26,9 +34,7 @@ public class OffersController : ControllerBase
         var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
 
         if (!int.TryParse(userIdClaim, out var userId))
-        {
             return Unauthorized(new { message = "Invalid user identity." });
-        }
 
         try
         {
