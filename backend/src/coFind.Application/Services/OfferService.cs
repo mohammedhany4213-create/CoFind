@@ -63,6 +63,42 @@ public class OfferService
         return offers.Select(MapToListItem);
     }
 
+    public async Task<OfferListItemResponse?> UpdateOfferAsync(int userId, int offerId, UpdateOfferRequest request, CancellationToken cancellationToken = default)
+    {
+        var offer = await _offerRepository.GetByIdAsync(offerId, cancellationToken);
+
+        if (offer is null || !offer.IsActive)
+            return null;
+
+        if (offer.UserId != userId)
+            throw new UnauthorizedAccessException("You are not allowed to update this offer.");
+
+        if (request.Skills is null || request.Skills.Count == 0)
+            throw new ArgumentException("At least one skill is required.");
+
+        var skills = request.Skills
+            .Where(s => !string.IsNullOrWhiteSpace(s))
+            .Select(s => s.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (skills.Count == 0)
+            throw new ArgumentException("At least one valid skill is required.");
+
+        offer.Title = request.Title.Trim();
+        offer.Description = request.Description.Trim();
+        offer.Role = request.Role.Trim();
+        offer.Skills = skills;
+        offer.Industry = request.Industry.Trim();
+        offer.IsAvilable = request.IsAvailable;
+        offer.Location = request.Location?.Trim() ?? string.Empty;
+        offer.UpdatedAt = DateTime.UtcNow;
+
+        await _offerRepository.SaveChangesAsync(cancellationToken);
+
+        return MapToListItem(offer);
+    }
+
     private static OfferListItemResponse MapToListItem(Offer offer)
     {
         var ownerId = offer.Owner?.UserId ?? offer.UserId;
