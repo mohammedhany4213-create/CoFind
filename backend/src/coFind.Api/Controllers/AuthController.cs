@@ -30,4 +30,20 @@ public class AuthController : ControllerBase
             return Conflict(new { message = ex.Message });
         }
     }
+
+    [HttpPost("login")]
+    public async Task<ActionResult<LoginUserResponse>> Login(
+        [FromBody] LoginUserRequest request,
+        CancellationToken cancellationToken)
+    {
+        try
+        {
+            var response = await _userService.LoginUserAsync(request, cancellationToken);
+            return Ok(response);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+    }
 }
