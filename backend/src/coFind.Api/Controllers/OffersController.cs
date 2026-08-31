@@ -37,6 +37,19 @@ public class OffersController : ControllerBase
     }
 
     [Authorize]
+    [HttpGet("my")]
+    public async Task<IActionResult> GetMyOffers(CancellationToken cancellationToken)
+    {
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (!int.TryParse(userIdClaim, out var userId))
+            return Unauthorized(new { message = "Invalid user identity." });
+
+        var offers = await _offerService.GetMyOffersAsync(userId, cancellationToken);
+        return Ok(offers);
+    }
+
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<CreateOfferResponse>> Create(
         [FromBody] CreateOfferRequest request,
