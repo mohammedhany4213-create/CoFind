@@ -15,18 +15,11 @@ public class OfferService
         _userRepository = userRepository;
     }
 
-    public async Task<CreateOfferResponse> CreateOfferAsync(
-        int userId,
-        CreateOfferRequest request,
-        CancellationToken cancellationToken = default)
+    public async Task<CreateOfferResponse> CreateOfferAsync(int userId, CreateOfferRequest request, CancellationToken cancellationToken = default)
     {
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
-
-        if (user is null)
-            throw new InvalidOperationException("User not found.");
-
-        if (request.Skills is null || request.Skills.Count == 0)
-            throw new ArgumentException("At least one skill is required.");
+        if (user is null) throw new InvalidOperationException("User not found.");
+        if (request.Skills is null || request.Skills.Count == 0) throw new ArgumentException("At least one skill is required.");
 
         var offer = new Offer
         {
@@ -35,11 +28,7 @@ public class OfferService
             Title = request.Title.Trim(),
             Description = request.Description.Trim(),
             Role = request.Role.Trim(),
-            Skills = request.Skills
-                .Where(skill => !string.IsNullOrWhiteSpace(skill))
-                .Select(skill => skill.Trim())
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToList(),
+            Skills = request.Skills.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
             Industry = request.Industry.Trim(),
             IsAvilable = request.IsAvailable,
             Location = request.Location?.Trim() ?? string.Empty,
@@ -48,32 +37,29 @@ public class OfferService
             UpdatedAt = DateTime.UtcNow
         };
 
-        if (offer.Skills.Count == 0)
-            throw new ArgumentException("At least one valid skill is required.");
-
+        if (offer.Skills.Count == 0) throw new ArgumentException("At least one valid skill is required.");
         await _offerRepository.AddAsync(offer, cancellationToken);
         await _offerRepository.SaveChangesAsync(cancellationToken);
 
-        return new CreateOfferResponse(
-            offer.OfferId,
-            offer.UserId,
-            offer.Title,
-            offer.Description,
-            offer.Role,
-            offer.Skills,
-            offer.Industry,
-            offer.IsAvilable,
-            offer.Location,
-            offer.IsActive,
-            offer.CreatedAt);
+        return new CreateOfferResponse(offer.OfferId, offer.UserId, offer.Title, offer.Description, offer.Role, offer.Skills, offer.Industry, offer.IsAvilable, offer.Location, offer.IsActive, offer.CreatedAt);
     }
 
-    public async Task<IEnumerable<OfferListItemResponse>> GetAllActiveOffersAsync(
-        CancellationToken cancellationToken = default)
+    public async Task<IEnumerable<OfferListItemResponse>> GetAllActiveOffersAsync(CancellationToken cancellationToken = default)
     {
         var offers = await _offerRepository.GetAllAsync(cancellationToken);
+        return offers.Select(MapToListItem);
+    }
 
-        return offers.Select(offer => new OfferListItemResponse(
+    public async Task<OfferListItemResponse?> GetByIdAsync(int offerId, CancellationToken cancellationToken = default)
+    {
+        var offer = await _offerRepository.GetByIdAsync(offerId, cancellationToken);
+        if (offer is null || !offer.IsActive) return null;
+        return MapToListItem(offer);
+    }
+
+    private static OfferListItemResponse MapToListItem(Offer offer)
+    {
+        return new OfferListItemResponse(
             offer.OfferId,
             offer.Title,
             offer.Description,
@@ -83,8 +69,6 @@ public class OfferService
             offer.IsAvilable,
             offer.Location,
             offer.CreatedAt,
-            new OfferOwnerResponse(
-                offer.Owner.UserId,
-                offer.Owner.Name)));
+            new OfferOwnerResponse(offer.Owner.UserId, offer.Owner.Name));
     }
 }
