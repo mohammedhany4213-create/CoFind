@@ -27,7 +27,7 @@ public class UserServiceTests
     public async Task Register_WithExistingEmail_ThrowsConflict()
     {
         var repository = new FakeUserRepository { EmailExistsResult = true };
-        var service = CreateService(repository);
+        var service = CreateService(repository: repository);
 
         var act = () => service.RegisterUserAsync(
             new RegisterUserRequest("Mohamed", "user@example.com", "01012345678", "Password123!"));
@@ -54,7 +54,7 @@ public class UserServiceTests
             RefreshToken = "new-refresh",
             GeneratedAccessToken = "new-access"
         };
-        var service = CreateService(repository: repository, tokenService: tokenService);
+        var service = CreateService(refreshRepository: repository, tokenService: tokenService);
 
         var response = await service.RefreshTokenAsync("old-refresh");
 
