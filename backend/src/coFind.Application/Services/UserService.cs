@@ -17,13 +17,13 @@ public class UserService
         IPasswordHasher passwordHasher,
         ITokenService tokenService,
         IRefreshTokenRepository refreshTokenRepository,
-        IConfiguration configuration)
+        TimeSpan refreshTokenLifetime)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
         _refreshTokenRepository = refreshTokenRepository;
-        _refreshTokenLifetime = TimeSpan.FromDays(configuration.GetValue("Jwt:RefreshTokenDays", 30));
+        _refreshTokenLifetime = refreshTokenLifetime;
     }
 
     public async Task<RegisterUserResponse> RegisterUserAsync(RegisterUserRequest request, CancellationToken cancellationToken = default)
@@ -70,12 +70,7 @@ public class UserService
         }, cancellationToken);
         await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
 
-        return new LoginUserResponse(
-            user.UserId,
-            user.Name,
-            user.Email,
-            _tokenService.GenerateToken(user),
-            refreshToken);
+        return new LoginUserResponse(user.UserId, user.Name, user.Email, _tokenService.GenerateToken(user), refreshToken);
     }
 
     public async Task<RefreshTokenResponse> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
