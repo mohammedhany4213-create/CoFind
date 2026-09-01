@@ -40,15 +40,7 @@ public class UserService
         };
 
         await _userRepository.AddAsync(user, cancellationToken);
-
-        try
-        {
-            await _userRepository.SaveChangesAsync(cancellationToken);
-        }
-        catch (Microsoft.EntityFrameworkCore.DbUpdateException)
-        {
-            throw new InvalidOperationException("Email is already registered.");
-        }
+        await _userRepository.SaveChangesAsync(cancellationToken);
 
         return new RegisterUserResponse(user.UserId, user.Name, user.Email, user.WhatsappNumber);
     }
@@ -75,7 +67,7 @@ public class UserService
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
         if (user is null) return null;
 
-        var name = request.Name?.Trim();
+        var name = request.Name.Trim();
         var whatsappNumber = NormalizePhone(request.WhatsappNumber);
         if (string.IsNullOrWhiteSpace(name)) throw new ArgumentException("Name is required.");
         if (string.IsNullOrWhiteSpace(whatsappNumber)) throw new ArgumentException("WhatsApp number is required.");
@@ -88,14 +80,7 @@ public class UserService
     }
 
     private static string NormalizePhone(string phone)
-    {
-        var value = new string(phone.Where(char.IsDigit).ToArray());
-        if (value.StartsWith("00", StringComparison.Ordinal))
-            value = value[2..];
-        if (value.StartsWith("+", StringComparison.Ordinal))
-            value = value[1..];
-        return value;
-    }
+        => new string(phone.Where(char.IsDigit).ToArray());
 
     private static UserProfileResponse MapToProfile(User user)
         => new(user.UserId, user.Name, user.Email, user.WhatsappNumber, user.CreatedAt, user.UpdatedAt);
