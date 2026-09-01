@@ -42,6 +42,20 @@ namespace coFind.Infrastructure.Migrations
                 b.ToTable("Offers");
             });
 
+            modelBuilder.Entity("coFind.Domain.Entities.RefreshToken", b =>
+            {
+                b.Property<int>("RefreshTokenId").ValueGeneratedOnAdd().HasColumnType("int");
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RefreshTokenId"));
+                b.Property<DateTime>("ExpiresAt").HasColumnType("datetime2");
+                b.Property<DateTime?>("RevokedAt").HasColumnType("datetime2");
+                b.Property<string>("TokenHash").IsRequired().HasMaxLength(128).HasColumnType("nvarchar(128)");
+                b.Property<int>("UserId").HasColumnType("int");
+                b.HasKey("RefreshTokenId");
+                b.HasIndex("TokenHash").IsUnique();
+                b.HasIndex("UserId");
+                b.ToTable("RefreshTokens");
+            });
+
             modelBuilder.Entity("coFind.Domain.Entities.User", b =>
             {
                 b.Property<int>("UserId").ValueGeneratedOnAdd().HasColumnType("int");
@@ -65,6 +79,15 @@ namespace coFind.Infrastructure.Migrations
                     .OnDelete(DeleteBehavior.Cascade)
                     .IsRequired();
                 b.Navigation("Owner");
+            });
+
+            modelBuilder.Entity("coFind.Domain.Entities.RefreshToken", b =>
+            {
+                b.HasOne("coFind.Domain.Entities.User", null)
+                    .WithMany()
+                    .HasForeignKey("UserId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
             });
 
             modelBuilder.Entity("coFind.Domain.Entities.User", b => b.Navigation("Offers"));
