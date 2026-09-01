@@ -1,11 +1,13 @@
 using coFind.Application.DTOs;
 using coFind.Application.Services;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace coFind.Api.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[EnableRateLimiting("Auth")]
 public class AuthController : ControllerBase
 {
     private readonly UserService _userService;
@@ -41,9 +43,9 @@ public class AuthController : ControllerBase
             var response = await _userService.LoginUserAsync(request, cancellationToken);
             return Ok(response);
         }
-        catch (UnauthorizedAccessException ex)
+        catch (UnauthorizedAccessException)
         {
-            return Unauthorized(new { message = ex.Message });
+            return Unauthorized(new { message = "Invalid email or password." });
         }
     }
 }
