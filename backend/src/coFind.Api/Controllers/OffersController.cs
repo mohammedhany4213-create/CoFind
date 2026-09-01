@@ -10,13 +10,25 @@ namespace coFind.Api.Controllers;
 [Route("api/[controller]")]
 public class OffersController : ControllerBase
 {
+    private const int DefaultPageSize = 20;
+    private const int MaxPageSize = 50;
     private readonly OfferService _offerService;
+
     public OffersController(OfferService offerService) => _offerService = offerService;
 
     [AllowAnonymous]
     [HttpGet]
-    public async Task<IActionResult> GetAll(CancellationToken cancellationToken)
-        => Ok(await _offerService.GetAllActiveOffersAsync(cancellationToken));
+    public async Task<IActionResult> GetAll(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = DefaultPageSize,
+        CancellationToken cancellationToken = default)
+    {
+        if (page < 1) return BadRequest(new { message = "Page must be greater than 0." });
+        if (pageSize < 1 || pageSize > MaxPageSize)
+            return BadRequest(new { message = $"Page size must be between 1 and {MaxPageSize}." });
+
+        return Ok(await _offerService.GetAllActiveOffersAsync(page, pageSize, cancellationToken));
+    }
 
     [AllowAnonymous]
     [HttpGet("{id:int}")]
