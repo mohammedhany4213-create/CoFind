@@ -20,17 +20,34 @@ public class OfferService
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
         if (user is null) throw new InvalidOperationException("User not found.");
         if (request.Skills is null || request.Skills.Count == 0) throw new ArgumentException("At least one skill is required.");
-        var offer = new Offer { UserId = userId, Owner = user, Title = request.Title.Trim(), Description = request.Description.Trim(), Role = request.Role.Trim(), Skills = request.Skills.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList(), Industry = request.Industry.Trim(), IsAvilable = request.IsAvailable, Location = request.Location?.Trim() ?? string.Empty, IsActive = true, CreatedAt = DateTime.UtcNow, UpdatedAt = DateTime.UtcNow };
+
+        var offer = new Offer
+        {
+            UserId = userId,
+            Owner = user,
+            Title = request.Title.Trim(),
+            Description = request.Description.Trim(),
+            Role = request.Role.Trim(),
+            Skills = request.Skills.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList(),
+            Industry = request.Industry.Trim(),
+            IsAvailable = request.IsAvailable,
+            Location = request.Location?.Trim() ?? string.Empty,
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow
+        };
+
         if (offer.Skills.Count == 0) throw new ArgumentException("At least one valid skill is required.");
         await _offerRepository.AddAsync(offer, cancellationToken);
         await _offerRepository.SaveChangesAsync(cancellationToken);
-        return new CreateOfferResponse(offer.OfferId, offer.UserId, offer.Title, offer.Description, offer.Role, offer.Skills, offer.Industry, offer.IsAvilable, offer.Location, offer.IsActive, offer.CreatedAt);
+
+        return new CreateOfferResponse(offer.OfferId, offer.UserId, offer.Title, offer.Description, offer.Role, offer.Skills, offer.Industry, offer.IsAvailable, offer.Location, offer.IsActive, offer.CreatedAt);
     }
 
     public async Task<IEnumerable<OfferListItemResponse>> GetAllActiveOffersAsync(CancellationToken cancellationToken = default)
     {
         var offers = await _offerRepository.GetAllAsync(cancellationToken);
-        return offers.Where(o => o.IsActive).Select(MapToListItem);
+        return offers.Select(MapToListItem);
     }
 
     public async Task<OfferListItemResponse?> GetByIdAsync(int offerId, CancellationToken cancellationToken = default)
@@ -52,9 +69,19 @@ public class OfferService
         if (offer is null) return null;
         if (offer.UserId != userId) throw new UnauthorizedAccessException("You are not allowed to update this offer.");
         if (request.Skills is null || request.Skills.Count == 0) throw new ArgumentException("At least one skill is required.");
+
         var skills = request.Skills.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
         if (skills.Count == 0) throw new ArgumentException("At least one valid skill is required.");
-        offer.Title = request.Title.Trim(); offer.Description = request.Description.Trim(); offer.Role = request.Role.Trim(); offer.Skills = skills; offer.Industry = request.Industry.Trim(); offer.IsAvilable = request.IsAvailable; offer.Location = request.Location?.Trim() ?? string.Empty; offer.UpdatedAt = DateTime.UtcNow;
+
+        offer.Title = request.Title.Trim();
+        offer.Description = request.Description.Trim();
+        offer.Role = request.Role.Trim();
+        offer.Skills = skills;
+        offer.Industry = request.Industry.Trim();
+        offer.IsAvailable = request.IsAvailable;
+        offer.Location = request.Location?.Trim() ?? string.Empty;
+        offer.UpdatedAt = DateTime.UtcNow;
+
         await _offerRepository.SaveChangesAsync(cancellationToken);
         return MapToListItem(offer);
     }
@@ -84,6 +111,6 @@ public class OfferService
     {
         var ownerId = offer.Owner?.UserId ?? offer.UserId;
         var ownerName = offer.Owner?.Name ?? string.Empty;
-        return new OfferListItemResponse(offer.OfferId, offer.Title, offer.Description, offer.Role, offer.Skills, offer.Industry, offer.IsAvilable, offer.Location, offer.IsActive, offer.CreatedAt, new OfferOwnerResponse(ownerId, ownerName));
+        return new OfferListItemResponse(offer.OfferId, offer.Title, offer.Description, offer.Role, offer.Skills, offer.Industry, offer.IsAvailable, offer.Location, offer.IsActive, offer.CreatedAt, new OfferOwnerResponse(ownerId, ownerName));
     }
 }
