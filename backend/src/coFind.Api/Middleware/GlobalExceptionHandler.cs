@@ -22,6 +22,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         var (statusCode, title) = exception switch
         {
             ArgumentException => (StatusCodes.Status400BadRequest, "Invalid request."),
+            InvalidOperationException => (StatusCodes.Status409Conflict, "Conflict."),
             UnauthorizedAccessException => (StatusCodes.Status401Unauthorized, "Authentication required."),
             KeyNotFoundException => (StatusCodes.Status404NotFound, "Resource not found."),
             _ => (StatusCodes.Status500InternalServerError, "An unexpected error occurred.")
@@ -31,7 +32,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         await Results.Problem(
             statusCode: statusCode,
             title: title,
-            detail: statusCode == StatusCodes.Status500InternalServerError ? null : exception.Message
+            detail = statusCode == StatusCodes.Status500InternalServerError ? null : exception.Message
         ).ExecuteAsync(httpContext);
 
         return true;
