@@ -5,4 +5,7 @@
     <Project Path="src/coFind.Domain/coFind.Domain.csproj" />
     <Project Path="src/coFind.Infrastructure/coFind.Infrastructure.csproj" />
   </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/coFind.UnitTests/coFind.UnitTests.csproj" />
+  </Folder>
 </Solution>
