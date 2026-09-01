@@ -32,7 +32,7 @@ public sealed class GlobalExceptionHandler : IExceptionHandler
         await Results.Problem(
             statusCode: statusCode,
             title: title,
-            detail = statusCode == StatusCodes.Status500InternalServerError ? null : exception.Message
+            detail: statusCode == StatusCodes.Status500InternalServerError ? null : exception.Message
         ).ExecuteAsync(httpContext);
 
         return true;
