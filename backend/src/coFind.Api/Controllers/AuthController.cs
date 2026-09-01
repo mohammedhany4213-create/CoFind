@@ -25,7 +25,7 @@ public class AuthController : ControllerBase
         try
         {
             var response = await _userService.RegisterUserAsync(request, cancellationToken);
-            return CreatedAtAction(nameof(Register), new { id = response.UserId }, response);
+            return Created(response);
         }
         catch (InvalidOperationException ex)
         {
