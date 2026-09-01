@@ -54,7 +54,7 @@ public class UserServiceTests
             RefreshToken = "new-refresh",
             GeneratedAccessToken = "new-access"
         };
-        var service = CreateService(new FakeUserRepository(), tokenService, repository);
+        var service = CreateService(repository: repository, tokenService: tokenService);
 
         var response = await service.RefreshTokenAsync("old-refresh");
 
@@ -77,7 +77,7 @@ public class UserServiceTests
                 RevokedAt = DateTime.UtcNow.AddMinutes(-1)
             }
         };
-        var service = CreateService(new FakeUserRepository(), new FakeTokenService(), repository);
+        var service = CreateService(refreshRepository: repository);
 
         var act = () => service.RefreshTokenAsync("old-refresh");
 
@@ -97,7 +97,7 @@ public class UserServiceTests
                 ExpiresAt = DateTime.UtcNow.AddMinutes(-1)
             }
         };
-        var service = CreateService(new FakeUserRepository(), new FakeTokenService(), repository);
+        var service = CreateService(refreshRepository: repository);
 
         var act = () => service.RefreshTokenAsync("old-refresh");
 
@@ -119,7 +119,7 @@ public class UserServiceTests
             },
             RotateResult = false
         };
-        var service = CreateService(new FakeUserRepository(), new FakeTokenService(), repository);
+        var service = CreateService(refreshRepository: repository);
 
         var act = () => service.RefreshTokenAsync("old-refresh");
 
@@ -127,12 +127,13 @@ public class UserServiceTests
     }
 
     private static UserService CreateService(
-        FakeUserRepository userRepository,
+        FakeUserRepository? userRepository = null,
+        FakePasswordHasher? passwordHasher = null,
         FakeTokenService? tokenService = null,
         FakeRefreshTokenRepository? refreshRepository = null)
         => new(
-            userRepository,
-            new FakePasswordHasher(),
+            userRepository ?? new FakeUserRepository(),
+            passwordHasher ?? new FakePasswordHasher(),
             tokenService ?? new FakeTokenService(),
             refreshRepository ?? new FakeRefreshTokenRepository(),
             TimeSpan.FromDays(30));
