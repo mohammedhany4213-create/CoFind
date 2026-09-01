@@ -2,6 +2,7 @@ using coFind.Application.DTOs;
 using coFind.Application.Interfaces;
 using coFind.Application.Services;
 using coFind.Domain.Entities;
+using Xunit;
 
 namespace coFind.UnitTests.Services;
 
