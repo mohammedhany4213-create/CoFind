@@ -26,6 +26,11 @@ public class AppDbContext : DbContext
             .OnDelete(DeleteBehavior.Cascade);
 
         modelBuilder.Entity<RefreshToken>()
+            .Property(t => t.TokenHash)
+            .HasMaxLength(128)
+            .IsRequired();
+
+        modelBuilder.Entity<RefreshToken>()
             .HasIndex(t => t.TokenHash)
             .IsUnique();
 
