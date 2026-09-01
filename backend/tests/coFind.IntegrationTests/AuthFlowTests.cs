@@ -1,16 +1,15 @@
 using System.Net;
 using System.Net.Http.Json;
 using coFind.Application.DTOs;
-using Microsoft.AspNetCore.Mvc.Testing;
 using Xunit;
 
 namespace coFind.IntegrationTests;
 
-public class AuthFlowTests : IClassFixture<WebApplicationFactory<Program>>
+public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
 {
     private readonly HttpClient _client;
 
-    public AuthFlowTests(WebApplicationFactory<Program> factory)
+    public AuthFlowTests(CustomWebApplicationFactory factory)
     {
         _client = factory.CreateClient();
     }
@@ -50,8 +49,9 @@ public class AuthFlowTests : IClassFixture<WebApplicationFactory<Program>>
     public async Task Login_WithWrongPassword_ReturnsUnauthorized()
     {
         var email = $"test-{Guid.NewGuid():N}@example.com";
-        await _client.PostAsJsonAsync("/api/auth/register", new RegisterUserRequest(
+        var register = await _client.PostAsJsonAsync("/api/auth/register", new RegisterUserRequest(
             "Integration Test", email, "01012345678", "Password123!"));
+        Assert.Equal(HttpStatusCode.Created, register.StatusCode);
 
         var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginUserRequest(
             email, "WrongPassword123!"));
