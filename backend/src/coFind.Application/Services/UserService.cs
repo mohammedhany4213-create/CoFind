@@ -9,12 +9,21 @@ public class UserService
     private readonly IUserRepository _userRepository;
     private readonly IPasswordHasher _passwordHasher;
     private readonly ITokenService _tokenService;
+    private readonly IRefreshTokenRepository _refreshTokenRepository;
+    private readonly TimeSpan _refreshTokenLifetime;
 
-    public UserService(IUserRepository userRepository, IPasswordHasher passwordHasher, ITokenService tokenService)
+    public UserService(
+        IUserRepository userRepository,
+        IPasswordHasher passwordHasher,
+        ITokenService tokenService,
+        IRefreshTokenRepository refreshTokenRepository,
+        IConfiguration configuration)
     {
         _userRepository = userRepository;
         _passwordHasher = passwordHasher;
         _tokenService = tokenService;
+        _refreshTokenRepository = refreshTokenRepository;
+        _refreshTokenLifetime = TimeSpan.FromDays(configuration.GetValue("Jwt:RefreshTokenDays", 30));
     }
 
     public async Task<RegisterUserResponse> RegisterUserAsync(RegisterUserRequest request, CancellationToken cancellationToken = default)
@@ -52,8 +61,46 @@ public class UserService
         if (user is null || !_passwordHasher.Verify(request.Password, user.PasswordHash))
             throw new UnauthorizedAccessException("Invalid email or password.");
 
-        var token = _tokenService.GenerateToken(user);
-        return new LoginUserResponse(user.UserId, user.Name, user.Email, token);
+        var refreshToken = _tokenService.GenerateRefreshToken();
+        await _refreshTokenRepository.AddAsync(new RefreshToken
+        {
+            UserId = user.UserId,
+            TokenHash = _tokenService.HashRefreshToken(refreshToken),
+            ExpiresAt = DateTime.UtcNow.Add(_refreshTokenLifetime)
+        }, cancellationToken);
+        await _refreshTokenRepository.SaveChangesAsync(cancellationToken);
+
+        return new LoginUserResponse(
+            user.UserId,
+            user.Name,
+            user.Email,
+            _tokenService.GenerateToken(user),
+            refreshToken);
+    }
+
+    public async Task<RefreshTokenResponse> RefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            throw new UnauthorizedAccessException("Invalid refresh token.");
+
+        var currentToken = await _refreshTokenRepository.GetByHashAsync(
+            _tokenService.HashRefreshToken(refreshToken), cancellationToken);
+
+        if (currentToken is null || currentToken.RevokedAt is not null || currentToken.ExpiresAt <= DateTime.UtcNow)
+            throw new UnauthorizedAccessException("Invalid refresh token.");
+
+        var replacementRefreshToken = _tokenService.GenerateRefreshToken();
+        var replacement = new RefreshToken
+        {
+            UserId = currentToken.UserId,
+            TokenHash = _tokenService.HashRefreshToken(replacementRefreshToken),
+            ExpiresAt = DateTime.UtcNow.Add(_refreshTokenLifetime)
+        };
+
+        if (!await _refreshTokenRepository.RotateAsync(currentToken, replacement, cancellationToken))
+            throw new UnauthorizedAccessException("Invalid refresh token.");
+
+        return new RefreshTokenResponse(_tokenService.GenerateToken(currentToken.User), replacementRefreshToken);
     }
 
     public async Task<UserProfileResponse?> GetProfileAsync(int userId, CancellationToken cancellationToken = default)
