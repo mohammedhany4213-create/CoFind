@@ -44,10 +44,15 @@ public class OfferService
         return new CreateOfferResponse(offer.OfferId, offer.UserId, offer.Title, offer.Description, offer.Role, offer.Skills, offer.Industry, offer.IsAvailable, offer.Location, offer.IsActive, offer.CreatedAt);
     }
 
-    public async Task<IEnumerable<OfferListItemResponse>> GetAllActiveOffersAsync(CancellationToken cancellationToken = default)
+    public async Task<PagedResponse<OfferListItemResponse>> GetAllActiveOffersAsync(
+        int page,
+        int pageSize,
+        CancellationToken cancellationToken = default)
     {
-        var offers = await _offerRepository.GetAllAsync(cancellationToken);
-        return offers.Select(MapToListItem);
+        var (offers, totalCount) = await _offerRepository.GetActivePagedAsync(page, pageSize, cancellationToken);
+        var items = offers.Select(MapToListItem).ToList();
+        var totalPages = (int)Math.Ceiling(totalCount / (double)pageSize);
+        return new PagedResponse<OfferListItemResponse>(items, page, pageSize, totalCount, totalPages);
     }
 
     public async Task<OfferListItemResponse?> GetByIdAsync(int offerId, CancellationToken cancellationToken = default)
