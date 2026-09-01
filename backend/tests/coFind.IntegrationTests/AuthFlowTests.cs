@@ -19,7 +19,7 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
     {
         var email = $"test-{Guid.NewGuid():N}@example.com";
         var register = await _client.PostAsJsonAsync("/api/auth/register", new RegisterUserRequest(
-            "Integration Test", email, "01012345678", "Password123!"));
+            "Integration Test", email, "Password123!", "01012345678"));
 
         Assert.Equal(HttpStatusCode.Created, register.StatusCode);
 
@@ -50,7 +50,7 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
     {
         var email = $"test-{Guid.NewGuid():N}@example.com";
         var register = await _client.PostAsJsonAsync("/api/auth/register", new RegisterUserRequest(
-            "Integration Test", email, "01012345678", "Password123!"));
+            "Integration Test", email, "Password123!", "01012345678"));
         Assert.Equal(HttpStatusCode.Created, register.StatusCode);
 
         var response = await _client.PostAsJsonAsync("/api/auth/login", new LoginUserRequest(
