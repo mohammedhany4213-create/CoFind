@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using coFind.Api.Extensions;
 using coFind.Application.DTOs;
 using coFind.Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -30,8 +30,7 @@ public class OffersController : ControllerBase
     [HttpGet("my")]
     public async Task<IActionResult> GetMyOffers(CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized(new { message = "Invalid user identity." });
+        if (!User.TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
         return Ok(await _offerService.GetMyOffersAsync(userId, cancellationToken));
     }
 
@@ -39,8 +38,7 @@ public class OffersController : ControllerBase
     [HttpPost]
     public async Task<ActionResult<CreateOfferResponse>> Create([FromBody] CreateOfferRequest request, CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized(new { message = "Invalid user identity." });
+        if (!User.TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
         try
         {
             var response = await _offerService.CreateOfferAsync(userId, request, cancellationToken);
@@ -54,8 +52,7 @@ public class OffersController : ControllerBase
     [HttpPut("{id:int}")]
     public async Task<IActionResult> Update(int id, [FromBody] UpdateOfferRequest request, CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized(new { message = "Invalid user identity." });
+        if (!User.TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
         try
         {
             var offer = await _offerService.UpdateOfferAsync(userId, id, request, cancellationToken);
@@ -69,8 +66,7 @@ public class OffersController : ControllerBase
     [HttpPatch("{id:int}/status")]
     public async Task<IActionResult> UpdateStatus(int id, [FromBody] UpdateOfferStatusRequest request, CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized(new { message = "Invalid user identity." });
+        if (!User.TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
         try
         {
             var offer = await _offerService.UpdateOfferStatusAsync(userId, id, request.IsActive, cancellationToken);
@@ -83,8 +79,7 @@ public class OffersController : ControllerBase
     [HttpDelete("{id:int}")]
     public async Task<IActionResult> Delete(int id, CancellationToken cancellationToken)
     {
-        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
-        if (!int.TryParse(userIdClaim, out var userId)) return Unauthorized(new { message = "Invalid user identity." });
+        if (!User.TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
         try
         {
             var deleted = await _offerService.DeleteOfferAsync(userId, id, cancellationToken);
