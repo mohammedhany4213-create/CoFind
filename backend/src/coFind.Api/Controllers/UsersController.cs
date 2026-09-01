@@ -1,4 +1,4 @@
-using System.Security.Claims;
+using coFind.Api.Extensions;
 using coFind.Application.DTOs;
 using coFind.Application.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -21,7 +21,7 @@ public class UsersController : ControllerBase
     [HttpGet("me")]
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
+        if (!User.TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
 
         var user = await _userService.GetProfileAsync(userId, cancellationToken);
         return user is null ? NotFound(new { message = "User not found." }) : Ok(user);
@@ -30,7 +30,7 @@ public class UsersController : ControllerBase
     [HttpPut("me")]
     public async Task<IActionResult> UpdateMe([FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
-        if (!TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
+        if (!User.TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
 
         try
         {
@@ -41,10 +41,5 @@ public class UsersController : ControllerBase
         {
             return BadRequest(new { message = ex.Message });
         }
-    }
-
-    private bool TryGetUserId(out int userId)
-    {
-        return int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out userId);
     }
 }
