@@ -1,5 +1,6 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using System.Security.Cryptography;
 using System.Text;
 using coFind.Application.Interfaces;
 using coFind.Domain.Entities;
@@ -21,9 +22,7 @@ public class JwtTokenService : ITokenService
     {
         var jwtKey = _configuration["Jwt:Key"];
         if (string.IsNullOrWhiteSpace(jwtKey))
-        {
             throw new InvalidOperationException("JWT key is not configured.");
-        }
 
         var claims = new List<Claim>
         {
@@ -41,9 +40,15 @@ public class JwtTokenService : ITokenService
             issuer: _configuration["Jwt:Issuer"],
             audience: _configuration["Jwt:Audience"],
             claims: claims,
-            expires: DateTime.UtcNow.AddHours(2),
+            expires: DateTime.UtcNow.AddMinutes(15),
             signingCredentials: credentials);
 
         return new JwtSecurityTokenHandler().WriteToken(token);
     }
+
+    public string GenerateRefreshToken()
+        => Convert.ToBase64String(RandomNumberGenerator.GetBytes(64));
+
+    public string HashRefreshToken(string refreshToken)
+        => Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(refreshToken)));
 }
