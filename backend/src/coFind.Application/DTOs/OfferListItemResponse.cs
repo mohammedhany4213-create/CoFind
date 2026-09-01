@@ -9,6 +9,7 @@ public record OfferListItemResponse(
     string Industry,
     bool IsAvailable,
     string? Location,
+    bool IsActive,
     DateTime CreatedAt,
     OfferOwnerResponse Owner
 );
