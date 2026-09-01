@@ -30,7 +30,7 @@ public class OfferService
     public async Task<IEnumerable<OfferListItemResponse>> GetAllActiveOffersAsync(CancellationToken cancellationToken = default)
     {
         var offers = await _offerRepository.GetAllAsync(cancellationToken);
-        return offers.Select(MapToListItem);
+        return offers.Where(o => o.IsActive).Select(MapToListItem);
     }
 
     public async Task<OfferListItemResponse?> GetByIdAsync(int offerId, CancellationToken cancellationToken = default)
@@ -49,7 +49,7 @@ public class OfferService
     public async Task<OfferListItemResponse?> UpdateOfferAsync(int userId, int offerId, UpdateOfferRequest request, CancellationToken cancellationToken = default)
     {
         var offer = await _offerRepository.GetByIdAsync(offerId, cancellationToken);
-        if (offer is null || !offer.IsActive) return null;
+        if (offer is null) return null;
         if (offer.UserId != userId) throw new UnauthorizedAccessException("You are not allowed to update this offer.");
         if (request.Skills is null || request.Skills.Count == 0) throw new ArgumentException("At least one skill is required.");
         var skills = request.Skills.Where(s => !string.IsNullOrWhiteSpace(s)).Select(s => s.Trim()).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
@@ -84,6 +84,6 @@ public class OfferService
     {
         var ownerId = offer.Owner?.UserId ?? offer.UserId;
         var ownerName = offer.Owner?.Name ?? string.Empty;
-        return new OfferListItemResponse(offer.OfferId, offer.Title, offer.Description, offer.Role, offer.Skills, offer.Industry, offer.IsAvilable, offer.Location, offer.CreatedAt, new OfferOwnerResponse(ownerId, ownerName));
+        return new OfferListItemResponse(offer.OfferId, offer.Title, offer.Description, offer.Role, offer.Skills, offer.Industry, offer.IsAvilable, offer.Location, offer.IsActive, offer.CreatedAt, new OfferOwnerResponse(ownerId, ownerName));
     }
 }
