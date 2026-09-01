@@ -7,5 +7,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/coFind.UnitTests/coFind.UnitTests.csproj" />
+    <Project Path="tests/coFind.IntegrationTests/coFind.IntegrationTests.csproj" />
   </Folder>
 </Solution>
