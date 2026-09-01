@@ -27,8 +27,19 @@ builder.Services.AddScoped<IUserRepository, UserRepository>();
 builder.Services.AddScoped<IOfferRepository, OfferRepository>();
 builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
-builder.Services.AddScoped<UserService>();
+builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<OfferService>();
+
+var refreshTokenDays = builder.Configuration.GetValue("Jwt:RefreshTokenDays", 30);
+if (refreshTokenDays <= 0)
+    throw new InvalidOperationException("JWT refresh token lifetime must be greater than zero.");
+
+builder.Services.AddScoped<UserService>(sp => new UserService(
+    sp.GetRequiredService<IUserRepository>(),
+    sp.GetRequiredService<IPasswordHasher>(),
+    sp.GetRequiredService<ITokenService>(),
+    sp.GetRequiredService<IRefreshTokenRepository>(),
+    TimeSpan.FromDays(refreshTokenDays)));
 
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("JWT key is not configured.");
