@@ -3,7 +3,9 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Data.Sqlite;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace coFind.IntegrationTests;
 
@@ -35,11 +37,8 @@ public sealed class CustomWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.ConfigureServices(services =>
         {
-            var descriptor = services.SingleOrDefault(
-                service => service.ServiceType == typeof(DbContextOptions<AppDbContext>));
-
-            if (descriptor is not null)
-                services.Remove(descriptor);
+            services.RemoveAll<DbContextOptions<AppDbContext>>();
+            services.RemoveAll<IDbContextOptionsConfiguration<AppDbContext>>();
 
             _connection.Open();
             services.AddDbContext<AppDbContext>(options => options.UseSqlite(_connection));
