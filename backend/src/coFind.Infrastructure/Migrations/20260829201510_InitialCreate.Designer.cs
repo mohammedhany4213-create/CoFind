@@ -15,7 +15,6 @@ namespace coFind.Infrastructure.Migrations
     [Migration("20260829201510_InitialCreate")]
     partial class InitialCreate
     {
-        /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
@@ -26,117 +25,51 @@ namespace coFind.Infrastructure.Migrations
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
 
             modelBuilder.Entity("coFind.Domain.Entities.Offer", b =>
-                {
-                    b.Property<int>("OfferId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OfferId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Industry")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
-
-                    b.Property<bool>("IsAvilable")
-                        .HasColumnType("bit");
-
-                    b.Property<string>("Location")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.PrimitiveCollection<string>("Skills")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("int");
-
-                    b.HasKey("OfferId");
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Offers");
-                });
+            {
+                b.Property<int>("OfferId").ValueGeneratedOnAdd().HasColumnType("int");
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("OfferId"));
+                b.Property<DateTime>("CreatedAt").HasColumnType("datetime2");
+                b.Property<string>("Description").IsRequired().HasMaxLength(2000).HasColumnType("nvarchar(2000)");
+                b.Property<string>("Industry").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
+                b.Property<bool>("IsActive").HasColumnType("bit");
+                b.Property<bool>("IsAvailable").HasColumnType("bit");
+                b.Property<string>("Location").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                b.Property<string>("Role").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
+                b.PrimitiveCollection<string>("Skills").IsRequired().HasColumnType("nvarchar(max)");
+                b.Property<string>("Title").IsRequired().HasMaxLength(150).HasColumnType("nvarchar(150)");
+                b.Property<DateTime>("UpdatedAt").HasColumnType("datetime2");
+                b.Property<int>("UserId").HasColumnType("int");
+                b.HasKey("OfferId");
+                b.HasIndex("UserId");
+                b.ToTable("Offers");
+            });
 
             modelBuilder.Entity("coFind.Domain.Entities.User", b =>
-                {
-                    b.Property<int>("UserId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("Email")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("Name")
-                        .IsRequired()
-                        .HasMaxLength(50)
-                        .HasColumnType("nvarchar(50)");
-
-                    b.Property<string>("PasswordHash")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<DateTime>("UpdatedAt")
-                        .HasColumnType("datetime2");
-
-                    b.Property<string>("WhatsappNumber")
-                        .IsRequired()
-                        .HasMaxLength(15)
-                        .HasColumnType("nvarchar(15)");
-
-                    b.HasKey("UserId");
-
-                    b.ToTable("Users");
-                });
+            {
+                b.Property<int>("UserId").ValueGeneratedOnAdd().HasColumnType("int");
+                SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
+                b.Property<DateTime>("CreatedAt").HasColumnType("datetime2");
+                b.Property<string>("Email").IsRequired().HasMaxLength(100).HasColumnType("nvarchar(100)");
+                b.Property<string>("Name").IsRequired().HasMaxLength(50).HasColumnType("nvarchar(50)");
+                b.Property<string>("PasswordHash").IsRequired().HasColumnType("nvarchar(max)");
+                b.Property<DateTime>("UpdatedAt").HasColumnType("datetime2");
+                b.Property<string>("WhatsappNumber").IsRequired().HasMaxLength(15).HasColumnType("nvarchar(15)");
+                b.HasKey("UserId");
+                b.HasIndex("Email").IsUnique();
+                b.ToTable("Users");
+            });
 
             modelBuilder.Entity("coFind.Domain.Entities.Offer", b =>
-                {
-                    b.HasOne("coFind.Domain.Entities.User", "Owner")
-                        .WithMany("Offers")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+            {
+                b.HasOne("coFind.Domain.Entities.User", "Owner")
+                    .WithMany("Offers")
+                    .HasForeignKey("UserId")
+                    .OnDelete(DeleteBehavior.Cascade)
+                    .IsRequired();
+                b.Navigation("Owner");
+            });
 
-                    b.Navigation("Owner");
-                });
-
-            modelBuilder.Entity("coFind.Domain.Entities.User", b =>
-                {
-                    b.Navigation("Offers");
-                });
+            modelBuilder.Entity("coFind.Domain.Entities.User", b => b.Navigation("Offers"));
 #pragma warning restore 612, 618
         }
     }
