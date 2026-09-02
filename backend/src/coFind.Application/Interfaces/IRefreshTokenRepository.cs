@@ -9,5 +9,6 @@ public interface IRefreshTokenRepository
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
     Task<bool> RotateAsync(RefreshToken currentToken, RefreshToken replacementToken, CancellationToken cancellationToken = default);
     Task<bool> RevokeAsync(string tokenHash, CancellationToken cancellationToken = default);
+    Task<int> RevokeAllForUserAsync(int userId, CancellationToken cancellationToken = default);
     Task<int> DeleteExpiredOrRevokedAsync(DateTime olderThan, CancellationToken cancellationToken = default);
 }
