@@ -22,7 +22,7 @@ public class UserServiceTests
     {
         var repository = new FakeUserRepository { EmailExistsResult = true };
         var service = CreateService(userRepository: repository);
-        var act = () => service.RegisterUserAsync(new RegisterUserRequest("Mohamed", "user@example.com", "01012345678", "Password123!"));
+        var act = () => service.RegisterUserAsync(new RegisterUserRequest("Mohamed", "user@example.com", "Password123!", "01012345678"));
         await Assert.ThrowsAsync<InvalidOperationException>(act);
         Assert.False(repository.AddCalled);
     }
@@ -112,5 +112,7 @@ public class UserServiceTests
         public Task AddAsync(RefreshToken refreshToken, CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task SaveChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task<bool> RotateAsync(RefreshToken currentToken, RefreshToken replacementToken, CancellationToken cancellationToken = default) { RotateCalled = true; Replacement = replacementToken; return Task.FromResult(RotateResult); }
+        public Task<bool> RevokeAsync(string tokenHash, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task<int> DeleteExpiredOrRevokedAsync(DateTime olderThan, CancellationToken cancellationToken = default) => Task.FromResult(0);
     }
 }
