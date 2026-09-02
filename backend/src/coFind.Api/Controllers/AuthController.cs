@@ -1,5 +1,6 @@
 using coFind.Application.DTOs;
 using coFind.Application.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
 
@@ -62,5 +63,15 @@ public class AuthController : ControllerBase
         {
             return Unauthorized(new { message = "Invalid refresh token." });
         }
+    }
+
+    [Authorize]
+    [HttpPost("logout")]
+    public async Task<IActionResult> Logout(
+        [FromBody] RefreshTokenRequest request,
+        CancellationToken cancellationToken)
+    {
+        await _userService.RevokeRefreshTokenAsync(request.RefreshToken, cancellationToken);
+        return NoContent();
     }
 }
