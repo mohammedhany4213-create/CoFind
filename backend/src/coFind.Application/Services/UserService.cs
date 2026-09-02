@@ -98,6 +98,15 @@ public class UserService
         return new RefreshTokenResponse(_tokenService.GenerateToken(currentToken.User), replacementRefreshToken);
     }
 
+    public async Task RevokeRefreshTokenAsync(string refreshToken, CancellationToken cancellationToken = default)
+    {
+        if (string.IsNullOrWhiteSpace(refreshToken))
+            return;
+
+        await _refreshTokenRepository.RevokeAsync(
+            _tokenService.HashRefreshToken(refreshToken), cancellationToken);
+    }
+
     public async Task<UserProfileResponse?> GetProfileAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
