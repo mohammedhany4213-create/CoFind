@@ -28,6 +28,43 @@ public class UserServiceTests
     }
 
     [Fact]
+    public async Task ChangePassword_WithValidCurrentPassword_ChangesPasswordAndRevokesSessions()
+    {
+        var repository = new FakeUserRepository { User = new User { UserId = 1, PasswordHash = "old-hash" } };
+        var hasher = new FakePasswordHasher { VerifyResult = true };
+        var service = CreateService(userRepository: repository, passwordHasher: hasher);
+
+        await service.ChangePasswordAsync(1, new ChangePasswordRequest("OldPassword", "NewPassword123!"));
+
+        Assert.Equal("hash-NewPassword123!", repository.ChangedPasswordHash);
+        Assert.True(repository.ChangePasswordCalled);
+    }
+
+    [Fact]
+    public async Task ChangePassword_WithInvalidCurrentPassword_ThrowsUnauthorized()
+    {
+        var repository = new FakeUserRepository { User = new User { UserId = 1, PasswordHash = "old-hash" } };
+        var service = CreateService(userRepository: repository, passwordHasher: new FakePasswordHasher { VerifyResult = false });
+
+        var act = () => service.ChangePasswordAsync(1, new ChangePasswordRequest("wrong", "NewPassword123!"));
+
+        await Assert.ThrowsAsync<UnauthorizedAccessException>(act);
+        Assert.False(repository.ChangePasswordCalled);
+    }
+
+    [Fact]
+    public async Task ChangePassword_WithSamePassword_ThrowsBadRequest()
+    {
+        var repository = new FakeUserRepository { User = new User { UserId = 1, PasswordHash = "old-hash" } };
+        var service = CreateService(userRepository: repository, passwordHasher: new FakePasswordHasher { VerifyResult = true });
+
+        var act = () => service.ChangePasswordAsync(1, new ChangePasswordRequest("SamePassword123!", "SamePassword123!"));
+
+        await Assert.ThrowsAsync<ArgumentException>(act);
+        Assert.False(repository.ChangePasswordCalled);
+    }
+
+    [Fact]
     public async Task RefreshToken_WithValidToken_RotatesToken()
     {
         var user = new User { UserId = 1, Name = "Mohamed", Email = "user@example.com" };
@@ -79,17 +116,20 @@ public class UserServiceTests
         public User? User { get; init; }
         public bool EmailExistsResult { get; init; }
         public bool AddCalled { get; private set; }
+        public bool ChangePasswordCalled { get; private set; }
+        public string? ChangedPasswordHash { get; private set; }
         public Task<User?> GetByIdAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult(User);
         public Task<User?> GetByEmailAsync(string email, CancellationToken cancellationToken = default) => Task.FromResult(User);
         public Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default) => Task.FromResult(EmailExistsResult);
         public Task AddAsync(User user, CancellationToken cancellationToken = default) { AddCalled = true; return Task.CompletedTask; }
         public Task SaveChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
+        public Task ChangePasswordAndRevokeSessionsAsync(int userId, string passwordHash, DateTime updatedAt, CancellationToken cancellationToken = default) { ChangePasswordCalled = true; ChangedPasswordHash = passwordHash; return Task.CompletedTask; }
     }
 
     private sealed class FakePasswordHasher : IPasswordHasher
     {
         public bool VerifyResult { get; init; } = true;
-        public string Hash(string password) => "hash";
+        public string Hash(string password) => $"hash-{password}";
         public bool Verify(string password, string passwordHash) => VerifyResult;
     }
 
@@ -113,6 +153,7 @@ public class UserServiceTests
         public Task SaveChangesAsync(CancellationToken cancellationToken = default) => Task.CompletedTask;
         public Task<bool> RotateAsync(RefreshToken currentToken, RefreshToken replacementToken, CancellationToken cancellationToken = default) { RotateCalled = true; Replacement = replacementToken; return Task.FromResult(RotateResult); }
         public Task<bool> RevokeAsync(string tokenHash, CancellationToken cancellationToken = default) => Task.FromResult(false);
+        public Task<int> RevokeAllForUserAsync(int userId, CancellationToken cancellationToken = default) => Task.FromResult(0);
         public Task<int> DeleteExpiredOrRevokedAsync(DateTime olderThan, CancellationToken cancellationToken = default) => Task.FromResult(0);
     }
 }
