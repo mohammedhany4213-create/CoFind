@@ -107,6 +107,24 @@ public class UserService
             _tokenService.HashRefreshToken(refreshToken), cancellationToken);
     }
 
+    public async Task ChangePasswordAsync(int userId, ChangePasswordRequest request, CancellationToken cancellationToken = default)
+    {
+        var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
+        if (user is null)
+            throw new InvalidOperationException("User not found.");
+
+        if (!_passwordHasher.Verify(request.CurrentPassword, user.PasswordHash))
+            throw new UnauthorizedAccessException("Current password is incorrect.");
+
+        if (request.CurrentPassword == request.NewPassword)
+            throw new ArgumentException("New password must be different from the current password.");
+
+        user.PasswordHash = _passwordHasher.Hash(request.NewPassword);
+        user.UpdatedAt = DateTime.UtcNow;
+        await _userRepository.SaveChangesAsync(cancellationToken);
+        await _refreshTokenRepository.RevokeAllForUserAsync(userId, cancellationToken);
+    }
+
     public async Task<UserProfileResponse?> GetProfileAsync(int userId, CancellationToken cancellationToken = default)
     {
         var user = await _userRepository.GetByIdAsync(userId, cancellationToken);
