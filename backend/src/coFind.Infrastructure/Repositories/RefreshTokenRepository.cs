@@ -52,6 +52,11 @@ public class RefreshTokenRepository : IRefreshTokenRepository
             .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.RevokedAt, now), cancellationToken) == 1;
     }
 
+    public Task<int> RevokeAllForUserAsync(int userId, CancellationToken cancellationToken = default)
+        => _context.RefreshTokens
+            .Where(t => t.UserId == userId && t.RevokedAt == null && t.ExpiresAt > DateTime.UtcNow)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.RevokedAt, DateTime.UtcNow), cancellationToken);
+
     public Task<int> DeleteExpiredOrRevokedAsync(DateTime olderThan, CancellationToken cancellationToken = default)
         => _context.RefreshTokens
             .Where(t => t.ExpiresAt < olderThan || (t.RevokedAt != null && t.RevokedAt < olderThan))
