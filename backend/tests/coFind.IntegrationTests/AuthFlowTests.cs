@@ -47,7 +47,7 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
     public async Task ChangePassword_InvalidatesRefreshToken_And_AllowsLoginWithNewPassword()
     {
         var email = $"password-{Guid.NewGuid():N}@example.com";
-        await RegisterAndLoginAsync(email, out var loginResponse);
+        var loginResponse = await RegisterAndLoginAsync(email);
 
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
         var change = await _client.PutAsJsonAsync("/api/users/me/password", new ChangePasswordRequest("Password123!", "NewPassword123!"));
@@ -68,7 +68,7 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
     public async Task ChangePassword_WithWrongCurrentPassword_ReturnsUnauthorized()
     {
         var email = $"password-{Guid.NewGuid():N}@example.com";
-        await RegisterAndLoginAsync(email, out var loginResponse);
+        var loginResponse = await RegisterAndLoginAsync(email);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", loginResponse.Token);
 
         var response = await _client.PutAsJsonAsync("/api/users/me/password", new ChangePasswordRequest("WrongPassword123!", "NewPassword123!"));
@@ -93,13 +93,14 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
-    private async Task RegisterAndLoginAsync(string email, out LoginUserResponse loginResponse)
+    private async Task<LoginUserResponse> RegisterAndLoginAsync(string email)
     {
         var register = await _client.PostAsJsonAsync("/api/auth/register", new RegisterUserRequest("Integration Test", email, "Password123!", "01012345678"));
         Assert.Equal(HttpStatusCode.Created, register.StatusCode);
         var login = await _client.PostAsJsonAsync("/api/auth/login", new LoginUserRequest(email, "Password123!"));
         Assert.Equal(HttpStatusCode.OK, login.StatusCode);
-        loginResponse = (await login.Content.ReadFromJsonAsync<LoginUserResponse>())!;
-        Assert.NotNull(loginResponse);
+        var response = await login.Content.ReadFromJsonAsync<LoginUserResponse>();
+        Assert.NotNull(response);
+        return response!;
     }
 }
