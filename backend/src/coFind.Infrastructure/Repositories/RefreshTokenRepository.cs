@@ -43,4 +43,17 @@ public class RefreshTokenRepository : IRefreshTokenRepository
         await transaction.CommitAsync(cancellationToken);
         return true;
     }
+
+    public async Task<bool> RevokeAsync(string tokenHash, CancellationToken cancellationToken = default)
+    {
+        var now = DateTime.UtcNow;
+        return await _context.RefreshTokens
+            .Where(t => t.TokenHash == tokenHash && t.RevokedAt == null && t.ExpiresAt > now)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.RevokedAt, now), cancellationToken) == 1;
+    }
+
+    public Task<int> DeleteExpiredOrRevokedAsync(DateTime olderThan, CancellationToken cancellationToken = default)
+        => _context.RefreshTokens
+            .Where(t => t.ExpiresAt < olderThan || (t.RevokedAt != null && t.RevokedAt < olderThan))
+            .ExecuteDeleteAsync(cancellationToken);
 }
