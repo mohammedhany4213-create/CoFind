@@ -38,6 +38,28 @@ public class UserRepository : IUserRepository
         }
     }
 
+    public async Task ChangePasswordAndRevokeSessionsAsync(
+        int userId,
+        string passwordHash,
+        DateTime updatedAt,
+        CancellationToken cancellationToken = default)
+    {
+        await using var transaction = await _context.Database.BeginTransactionAsync(cancellationToken);
+
+        await _context.Users
+            .Where(u => u.UserId == userId)
+            .ExecuteUpdateAsync(setters => setters
+                .SetProperty(u => u.PasswordHash, passwordHash)
+                .SetProperty(u => u.UpdatedAt, updatedAt), cancellationToken);
+
+        var now = DateTime.UtcNow;
+        await _context.RefreshTokens
+            .Where(t => t.UserId == userId && t.RevokedAt == null && t.ExpiresAt > now)
+            .ExecuteUpdateAsync(setters => setters.SetProperty(t => t.RevokedAt, now), cancellationToken);
+
+        await transaction.CommitAsync(cancellationToken);
+    }
+
     private static bool IsUniqueEmailViolation(DbUpdateException exception)
     {
         var message = exception.InnerException?.Message ?? exception.Message;
