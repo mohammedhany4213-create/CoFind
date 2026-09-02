@@ -5,6 +5,7 @@ using coFind.Application.Services;
 using coFind.Infrastructure.Data;
 using coFind.Infrastructure.Repositories;
 using coFind.Infrastructure.Security;
+using coFind.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.EntityFrameworkCore;
