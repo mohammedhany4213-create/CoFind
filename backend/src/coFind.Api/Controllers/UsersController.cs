@@ -22,7 +22,6 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> GetMe(CancellationToken cancellationToken)
     {
         if (!User.TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
-
         var user = await _userService.GetProfileAsync(userId, cancellationToken);
         return user is null ? NotFound(new { message = "User not found." }) : Ok(user);
     }
@@ -31,11 +30,33 @@ public class UsersController : ControllerBase
     public async Task<IActionResult> UpdateMe([FromBody] UpdateUserRequest request, CancellationToken cancellationToken)
     {
         if (!User.TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
-
         try
         {
             var user = await _userService.UpdateProfileAsync(userId, request, cancellationToken);
             return user is null ? NotFound(new { message = "User not found." }) : Ok(user);
+        }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(new { message = ex.Message });
+        }
+    }
+
+    [HttpPut("me/password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequest request, CancellationToken cancellationToken)
+    {
+        if (!User.TryGetUserId(out var userId)) return Unauthorized(new { message = "Invalid user identity." });
+        try
+        {
+            await _userService.ChangePasswordAsync(userId, request, cancellationToken);
+            return NoContent();
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Unauthorized(new { message = ex.Message });
+        }
+        catch (InvalidOperationException ex)
+        {
+            return NotFound(new { message = ex.Message });
         }
         catch (ArgumentException ex)
         {
