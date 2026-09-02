@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using coFind.Application.DTOs;
 using Xunit;
@@ -15,7 +16,7 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
     }
 
     [Fact]
-    public async Task Register_Login_And_Refresh_Work()
+    public async Task Register_Login_Refresh_And_Logout_Work()
     {
         var email = $"test-{Guid.NewGuid():N}@example.com";
         var register = await _client.PostAsJsonAsync("/api/auth/register", new RegisterUserRequest(
@@ -41,8 +42,20 @@ public class AuthFlowTests : IClassFixture<CustomWebApplicationFactory>
         Assert.False(string.IsNullOrWhiteSpace(refreshResponse.RefreshToken));
         Assert.NotEqual(loginResponse.RefreshToken, refreshResponse.RefreshToken);
 
-        var reused = await _client.PostAsJsonAsync("/api/auth/refresh", new RefreshTokenRequest(loginResponse.RefreshToken));
-        Assert.Equal(HttpStatusCode.Unauthorized, reused.StatusCode);
+        _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", refreshResponse.Token);
+        var logout = await _client.PostAsJsonAsync("/api/auth/logout", new RefreshTokenRequest(refreshResponse.RefreshToken));
+        Assert.Equal(HttpStatusCode.NoContent, logout.StatusCode);
+
+        var afterLogout = await _client.PostAsJsonAsync("/api/auth/refresh", new RefreshTokenRequest(refreshResponse.RefreshToken));
+        Assert.Equal(HttpStatusCode.Unauthorized, afterLogout.StatusCode);
+    }
+
+    [Fact]
+    public async Task Logout_WithoutAuthentication_ReturnsUnauthorized()
+    {
+        _client.DefaultRequestHeaders.Authorization = null;
+        var response = await _client.PostAsJsonAsync("/api/auth/logout", new RefreshTokenRequest("invalid-refresh-token"));
+        Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
     }
 
     [Fact]
