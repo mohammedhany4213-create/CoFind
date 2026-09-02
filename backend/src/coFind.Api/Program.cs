@@ -29,6 +29,7 @@ builder.Services.AddScoped<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<ITokenService, JwtTokenService>();
 builder.Services.AddScoped<IRefreshTokenRepository, RefreshTokenRepository>();
 builder.Services.AddScoped<OfferService>();
+builder.Services.AddHostedService<RefreshTokenCleanupService>();
 
 var refreshTokenDays = builder.Configuration.GetValue("Jwt:RefreshTokenDays", 30);
 if (refreshTokenDays <= 0)
@@ -98,6 +99,7 @@ app.UseExceptionHandler();
 if (allowedOrigins.Length > 0)
     app.UseCors("Frontend");
 
+app.UseHttpsRedirection();
 app.UseRateLimiter();
 
 if (app.Environment.IsDevelopment())
