@@ -9,4 +9,5 @@ public interface IUserRepository
     Task<bool> EmailExistsAsync(string email, CancellationToken cancellationToken = default);
     Task AddAsync(User user, CancellationToken cancellationToken = default);
     Task SaveChangesAsync(CancellationToken cancellationToken = default);
+    Task ChangePasswordAndRevokeSessionsAsync(int userId, string passwordHash, DateTime updatedAt, CancellationToken cancellationToken = default);
 }
